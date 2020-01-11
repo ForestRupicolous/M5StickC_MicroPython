@@ -1,5 +1,5 @@
-# M5Stack Micropython Base [Lobo MicroPython](https://github.com/loboris/MicroPython_ESP32_psRAM_LoBo/)
-
+# M5StickC Micropython Base [Lobo MicroPython](https://github.com/loboris/MicroPython_ESP32_psRAM_LoBo/)
+# PORTING IN PROGRESS - USE ON YOUR OWN RISK
 ## Getting Started
 
 - See LoBo MicroPython [WiKi](https://github.com/loboris/MicroPython_ESP32_psRAM_LoBo/wiki)
