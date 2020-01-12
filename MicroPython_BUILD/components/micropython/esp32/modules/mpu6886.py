@@ -9,9 +9,6 @@
 #   http://www.opensource.org/licenses/mit-license.php
 #
 
-
-
-
 """
 MicroPython I2C driver for MPU6886 6-axis motion tracking device
 """
@@ -34,7 +31,7 @@ _ACCEL_XOUT_L = const(0x3c)
 _ACCEL_YOUT_H = const(0x3d)
 _ACCEL_YOUT_L = const(0x3e)
 _ACCEL_ZOUT_H = const(0x3f)
-_ACCEL_ZOUT_L= const(0x40)
+_ACCEL_ZOUT_L = const(0x40)
 _TEMP_OUT_H = const(0x41)
 _TEMP_OUT_L = const(0x42)
 _GYRO_XOUT_H = const(0x43)
@@ -80,14 +77,14 @@ SF_RAD_S = 57.295779578552 # 1 rad/s is 57.295779578552 deg/s
 class MPU6500:
     """Class which provides interface to MPU6886 6-axis motion tracking device."""
     def __init__(
-        self, i2c, address=0x68,
-        accel_fs=ACCEL_FS_SEL_2G, gyro_fs=GYRO_FS_SEL_250DPS,
-        accel_sf=SF_M_S2, gyro_sf=SF_RAD_S
-    ):
+            self, i2c, address=0x68,
+            accel_fs=ACCEL_FS_SEL_2G, gyro_fs=GYRO_FS_SEL_250DPS,
+            accel_sf=SF_M_S2, gyro_sf=SF_RAD_S
+        ):
         self.i2c = i2c
         self.address = address
 
-        if 0x19 != self.whoami:
+        if self.whoami != 0x19:
             raise RuntimeError("MPU6886 not found in I2C bus.")
 
         self._accel_so = self._accel_fs(accel_fs)
