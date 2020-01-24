@@ -17,8 +17,10 @@ __version__ = "0.1.0-dev"
 
 # pylint: disable=import-error
 import ustruct
+import utime
 from machine import I2C, Pin
 from micropython import const
+from math import sqrt
 # pylint: enable=import-error
 
 # register addresses
@@ -40,7 +42,16 @@ _GYRO_YOUT_H = const(0x45)
 _GYRO_YOUT_L = const(0x46)
 _GYRO_ZOUT_H = const(0x47)
 _GYRO_ZOUT_L = const(0x48)
+
+_USER_CTRL = const(0x6A)
+_PWR_MGMT_1 = const(0x6B)
+_PWR_MGMT_2 = const(0x6C)
+_CONFIG = const(0x1A)
+_FIFO_EN = const(0x23)
+
 _WHO_AM_I = const(0x75)
+
+
 
 #_ACCEL_FS_MASK = const(0b00011000)
 ACCEL_FS_SEL_2G = const(0b00000000)
@@ -74,12 +85,12 @@ SF_M_S2 = 9.80665 # 1 g = 9.80665 m/s2 ie. standard gravity
 SF_DEG_S = 1
 SF_RAD_S = 57.295779578552 # 1 rad/s is 57.295779578552 deg/s
 
-class MPU6500:
+class MPU6886:
     """Class which provides interface to MPU6886 6-axis motion tracking device."""
     def __init__(
             self, i2c, address=0x68,
             accel_fs=ACCEL_FS_SEL_2G, gyro_fs=GYRO_FS_SEL_250DPS,
-            accel_sf=SF_M_S2, gyro_sf=SF_RAD_S
+            accel_sf=SF_G, gyro_sf=SF_RAD_S
         ):
         self.i2c = i2c
         self.address = address
@@ -92,14 +103,18 @@ class MPU6500:
         self._accel_sf = accel_sf
         self._gyro_sf = gyro_sf
 
-        # Enable I2C bypass to access for MPU9250 magnetometer access.
-        char = self._register_char(_INT_PIN_CFG)
-        char &= ~_I2C_BYPASS_MASK # clear I2C bits
-        char |= _I2C_BYPASS_EN
-        self._register_char(_INT_PIN_CFG, char)
+        # power up sequence
+        print("Power up MPU6886 sequence (9s)")
+        self._register_char(_PWR_MGMT_1, 0x00)
+        utime.sleep(3)
+        self._register_char(_PWR_MGMT_1, 0x80)
+        utime.sleep(3)
+        self._register_char(_PWR_MGMT_1, 0x01)
+        utime.sleep(3)
+
 
     @property
-    def acceleration(self):
+    def acc(self):
         """
         Acceleration measured by the sensor. By default will return a
         3-tuple of X, Y, Z axis acceleration values in m/s^2 as floats. Will
@@ -122,6 +137,30 @@ class MPU6500:
 
         xyz = self._register_three_shorts(_GYRO_XOUT_H)
         return tuple([value / so * sf for value in xyz])
+
+    def _is_stationary(self):
+        # could also be solved with interrupt from mpu
+        return (sqrt(sum([val*val for val in self.acc]))) < 1.1
+
+    def get_dir(self):
+        if self._is_stationary():
+            if -1.1 < self.acc[0] < -0.9:
+                print('x')
+            elif 0.9 < self.acc[0] < 1.1:
+                print('-x')
+            elif -1.1 < self.acc[1] < -0.9:
+                print('-y')
+            elif 0.9 < self.acc[1] < 1.1:
+                print('y')
+            elif -1.1 < self.acc[2] < -0.9:
+                print('-z')
+            elif 0.9 < self.acc[2] < 1.1:
+                print('z')
+            else:
+                print('inclined')
+        else:
+            print('Moving!')
+
 
     @property
     def whoami(self):
